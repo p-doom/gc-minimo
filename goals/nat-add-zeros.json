@@ -1,0 +1,15 @@
+{
+    "goals": [
+        {
+            "name": "nat-add-zeros",
+            "theorem": "(= (+ z (s z)) (s (+ z (+ z z))))",
+            "solution": [
+                "S: G=1\nState: {  }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\n\nA: c eq_refl\n???Y",
+                "S: G=1\nState: {  }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\nA: => (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z)))).\n???Y",
+                "S: <solved>\n???Y",
+                "S: G=1\nState: {  }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\n???Y",
+                "S: G=1\nState: {  }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\n\n???Y"
+            ]
+        }
+    ]
+}
