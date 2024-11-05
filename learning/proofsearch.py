@@ -970,7 +970,7 @@ class ProofSearchAgent:
         self._max_mcts_nodes = agent_config.get('max_mcts_nodes', 1000)
         self._max_searches = agent_config.get('max_searches', 1)
         self._max_examples = agent_config.get('max_examples', 10**8)
-        self._checkpoint_every = agent_config.get('checkpoint_every', 1000)
+        self._checkpoint_every = agent_config.get('checkpoint_every', None)
         self._policy = make_policy(agent_config.policy)
         self._node_type = ({'vanilla': LeftmostFirstSearchNode,
                             'holophrasm': HolophrasmNode})[agent_config.get('node_type', 'holophrasm')]
@@ -1022,7 +1022,7 @@ class ProofSearchAgent:
     def train(self, examples, final_goals, solutions, ratio_proven): 
         examples = examples or self._examples
 
-        if self._training_its % self._checkpoint_every == 0:
+        if self._checkpoint_every is not None and self._training_its % self._checkpoint_every == 0:
             path = os.path.join(self._checkpoint_dir, f'{self._checkpoints}.pt')
             os.makedirs(os.path.dirname(path), exist_ok=True)
             torch.save(self, path)

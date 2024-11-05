@@ -56,6 +56,13 @@ def try_prove(agent_dump: bytes, theory: BackgroundTheory, statement: str) -> St
         agent_result = agent.proof_search(statement, state)
 
         if agent_result.success:
+            print('===========================================================')
+            print('statement:')
+            print(statement)
+            print('examples')
+            for e in agent_result.examples:
+                print(e)
+            print('===========================================================')
             proof = agent_result.root.state_node.reconstruct_proof(
                 agent_result.root.get_solution_actions())
             solution_actions = agent_result.root.get_solution_actions()

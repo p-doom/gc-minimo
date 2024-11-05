@@ -81,24 +81,28 @@ async def teacher_loop(cfg: DictConfig):
         os.chdir(continue_dir)
         print('Continuing run from', continue_dir)
         # Find largest iteration number such that i.pt exists.
-        i = 0
-        while os.path.exists(f'{i}.pt'):
-            i += 1
-        i -= 1
-        start_iteration = i
-        agent = torch.load(f'{i}.pt')
-        print('Loaded agent from', f'{i}.pt')
-        # Load examples and outcomes.
-        if i > 0:
-            with open(f'outcomes_{i-1}.json', 'r') as f:
-                outcomes = json.load(f)
-                proven_conjectures = [o['problem'] for o in outcomes
-                                      if o['hindsight'] is False and
-                                         o['proof'] is not None]
-                seen_hindsight_goals = {o['problem'] for o in outcomes
-                                        if o['hindsight'] and o['proof'] is not None}
+        if cfg.get('checkpoint_always', False):
+            i = 0
+            while os.path.exists(f'{i}.pt'):
+                i += 1
+            i -= 1
+            start_iteration = i
+            agent = torch.load(f'{i}.pt')
+            print('Loaded agent from', f'{i}.pt')
+            # Load examples and outcomes.
+            if i > 0:
+                with open(f'outcomes_{i-1}.json', 'r') as f:
+                    outcomes = json.load(f)
+                    proven_conjectures = [o['problem'] for o in outcomes
+                                        if o['hindsight'] is False and
+                                            o['proof'] is not None]
+                    seen_hindsight_goals = {o['problem'] for o in outcomes
+                                            if o['hindsight'] and o['proof'] is not None}
 
-        print('Loaded', len(proven_conjectures), 'proven conjectures from previous run.')
+            print('Loaded', len(proven_conjectures), 'proven conjectures from previous run.')
+        else:
+            agent = torch.load('model.pt')
+
 
 
     if cfg.get('freeze_conjecturer', False):
@@ -107,7 +111,10 @@ async def teacher_loop(cfg: DictConfig):
 
     with open('log.jsonl', 'w') as log:
         for i in range(start_iteration, cfg.agent.policy.total_iterations):
-            torch.save(agent, f'{i}.pt')
+            if cfg.get('checkpoint_always', False):
+                torch.save(agent, f'{i}.pt')
+            else:
+                torch.save(agent, f'model.pt')
 
             context = Context(d, None, [])
 
@@ -227,10 +234,10 @@ async def teacher_loop(cfg: DictConfig):
             if i + 1 < cfg.agent.policy.total_iterations:
                 print(len(examples), 'accumulated training examples.')
                 agent.train(examples=examples, final_goals=final_goals, solutions=final_solutions, ratio_proven=ratio_proven)
-            save_json(outcomes, f'outcomes_{i}.json')
+            # save_json(outcomes, f'outcomes_{i}.json')
 
-            save_json(examples, f'examples_{i}.json')
-            torch.save(student_results, f'results_{i}.json')
+            # save_json(examples, f'examples_{i}.json')
+            # torch.save(student_results, f'results_{i}.json')
 
 
 def prove_conjectures(agent_dump, conjectures, theory, premises):
