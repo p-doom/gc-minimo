@@ -49,11 +49,11 @@ successful_goals = [json.loads(fix_json_quotes(goal))['str'] for goal in success
 
 # Create a single dictionary with statement and theorems as a list
 formatted_goal = {
-    "name": "nat-add-synthetic",
+    "name": "nat-add-zeros",
     "theorem": "(= (+ z (s z)) (s (+ z (+ z z))))",
     "solution": successful_goals
 }
 
 # Save to JSON file
-with open('nat-add-synthetic.json', 'w') as f:
+with open('nat-add-zeros.json', 'w') as f:
     json.dump({"goals": [formatted_goal]}, f, indent=4)
