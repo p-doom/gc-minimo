@@ -175,7 +175,7 @@ async def teacher_loop(cfg: DictConfig):
             
             ratio_proven = len(success_logprobs)/len(conjectures)
             print(len(success_logprobs), 'out of', len(conjectures), 'conjectures proven.', 'ratio =', ratio_proven)
-            wandb.log({'proved_ratio': ratio_proven, 'iteration': i})
+            wandb.log({'proved_ratio': ratio_proven, 'iteration': i, 'n_conj': len(conjectures), 'n_successes': len(success_logprobs)})
 
             if not success_logprobs:
                 print(f'No solutions found in iteration {i} - continuing to next iteration...')
