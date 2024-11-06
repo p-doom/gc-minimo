@@ -1044,9 +1044,9 @@ class ProofSearchAgent:
             # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
             solutions_flattened = [x for xs in solutions for x in xs]
             val_loss = self._policy.val_loss(solutions_flattened)
-            wandb.log({'val_loss': val_loss})
 
         self._training_its += 1
+        return val_loss
 
 def mcts_example(cfg):
     problemset = problems.load_problemset('nng')
@@ -1136,14 +1136,14 @@ def run_proof_search_agent(config):
         try:
             result = agent.proof_search(problem, problemset.initialize_problem(problem))
             print('Success?', result.success)
-            wandb.log({'success': int(result.success)})
+            # wandb.log({'success': int(result.success)})
 
             if result.success:
                 problemset.mark_as_solved(problem, add_to_library=config.accumulate_library)
 
-            wandb.log({'cumm_pass_rate': problemset.cumulative_pass_rate()})
-            wandb.log({'train_progress': (i + 1) / config.max_problems})
-            wandb.log({f'success/{problem}': float(result.success)})
+            # wandb.log({'cumm_pass_rate': problemset.cumulative_pass_rate()})
+            # wandb.log({'train_progress': (i + 1) / config.max_problems})
+            # wandb.log({f'success/{problem}': float(result.success)})
 
             agent.train()
         except KeyboardInterrupt:
@@ -1455,7 +1455,7 @@ nat_ind : [('p : [nat -> prop]) -> ('p z) -> [('n : nat) -> ('p 'n) -> ('p (s 'n
                     if e['type'] == t:
                         s = e['str']
                         out.write(s.replace('\n', '\\n') + '\n')
-        wandb.log = lambda *args, **kwargs: None
+        # wandb.log = lambda *args, **kwargs: None
         # setup_wandb(DictConfig({'job': {'wandb_project': 'peano'}}))
 
         for i in range(10):
