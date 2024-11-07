@@ -8,7 +8,7 @@ in_examples = False
 current_example = ""
 
 for line in lines:
-    if line.strip() == "examples:":
+    if line.strip() == "examples":
         in_examples = True
         continue
     
@@ -49,11 +49,11 @@ successful_goals = [json.loads(fix_json_quotes(goal))['str'] for goal in success
 
 # Create a single dictionary with statement and theorems as a list
 formatted_goal = {
-    "name": "nat-add-zeros",
+    "name": "nat-add-tmp",
     "theorem": "(= (+ z (s z)) (s (+ z (+ z z))))",
     "solution": successful_goals
 }
 
 # Save to JSON file
-with open('nat-add-zeros.json', 'w') as f:
+with open('nat-add-tmp.json', 'w') as f:
     json.dump({"goals": [formatted_goal]}, f, indent=4)
