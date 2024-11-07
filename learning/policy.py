@@ -70,7 +70,7 @@ class TransformerLMPolicy(nn.Module):
         self._lm = transformers.GPT2LMHeadModel(cfg).to(device)
         self._optimizer = torch.optim.AdamW(self._lm.parameters(), lr=config.get('lr', 1e-4))
 
-    def get_loss(self, strs):
+    def get_loss(self, strs, val_loss=False):
         _, input_ids = self._strs_to_token_ids(strs, True)
         labels = input_ids.clone()
         labels[labels == PAD] = -100
@@ -84,12 +84,23 @@ class TransformerLMPolicy(nn.Module):
                         prefix_len = len(s[:prefix_end + 2]) + 1
                         # Set labels to -100 for all prefix tokens
                         labels[i, :prefix_len] = -100
+        if val_loss:
+            # mask out loss computation for everything but predicting the action
+            for i, s in enumerate(strs):
+                if 'State:' in s and 'Goal:' in s:
+                    goal_pos = s.find("Goal:")
+                    prefix_end = s.find("\n", goal_pos)
+                    if prefix_end != -1:
+                        # Convert prefix length to token length (add 1 for BOS token)
+                        prefix_len = len(s[:prefix_end + 1]) + 1
+                        # Set labels to -100 for all prefix tokens
+                        labels[i, prefix_len:] = -100
         attn_mask = input_ids != PAD
         return self._lm.forward(input_ids, attention_mask=attn_mask, labels=labels).loss
 
     def val_loss(self, val_set):
         self._lm.eval()
-        loss = self.get_loss(val_set).item()
+        loss = self.get_loss(val_set, True).item()
         return loss
 
     def fit(self, examples, final_goals, iteration, ratio_proven, verbose=False):
