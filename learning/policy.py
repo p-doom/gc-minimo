@@ -158,7 +158,7 @@ class TransformerLMPolicy(nn.Module):
 
     def get_mu(self, conjectures_proved_ratio, step):
         if self.ratio_conditioning:
-            raise NotImplementedError("Ratio-conditional mu not implemented")
+            return self.mu * conjectures_proved_ratio
         else:
             if self.mu_warmup and step < self.mu_warmup_steps:
                 return self.mu * (step/(self.mu_warmup_steps))

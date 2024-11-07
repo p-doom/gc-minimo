@@ -299,9 +299,16 @@ def main(cfg: DictConfig):
     print('Running from:', os.getcwd())
     
     seed = cfg.seed
-    torch.manual_seed(seed)
-    random.seed(seed)
+    # torch.manual_seed(seed)
+    # random.seed(seed)
+    # np.random.seed(seed)
+    # set random seed for reproducibility
     np.random.seed(seed)
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    torch.cuda.manual_seed(seed)
 
     setup_wandb(cfg)
     if cfg.task == 'teacher':
