@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Optional
 import traceback
 import os
+from redis import Redis
 
 import torch
 from omegaconf import DictConfig
@@ -34,7 +35,8 @@ class BackgroundTheory:
     premises: list[str]
 
 
-redis_url = f'redis://{os.environ.get("REDIS", "localhost")}'
+redis_url = f'redis://{os.environ.get("REDIS", "localhost:6379")}'
+redis_client = Redis.from_url(redis_url)
 app = Celery('worker', backend=redis_url, broker=redis_url)
 app.conf.task_serializer = 'pickle'
 app.conf.result_serializer = 'pickle'

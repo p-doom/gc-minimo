@@ -8,6 +8,8 @@ import io
 import json
 import datetime
 import random
+from redis import Redis
+from worker import redis_client  
 
 import hydra
 from omegaconf import DictConfig
@@ -259,6 +261,7 @@ def prove_conjectures(agent_dump, conjectures, theory, premises):
             continue
 
         student_results.append(student_result)
+    redis_client.flushdb()
     return student_results
 
 
