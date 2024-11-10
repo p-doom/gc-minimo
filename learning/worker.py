@@ -35,7 +35,7 @@ class BackgroundTheory:
     premises: list[str]
 
 
-redis_url = f'redis://{os.environ.get("REDIS", "localhost:6379")}'
+redis_url = f'redis://{os.environ.get("REDIS", "localhost")}'
 redis_client = Redis.from_url(redis_url)
 app = Celery('worker', backend=redis_url, broker=redis_url)
 app.conf.task_serializer = 'pickle'
