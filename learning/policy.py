@@ -32,13 +32,13 @@ class TransformerLMPolicy(nn.Module):
 
         self.config = config
         # FIXME(f.srambical): adjust these default values
-        self.threshold = config.get('threshold', 0.5)
-        self.margin = config.get('margin', 0.1)
-        self.mu = config.get('mu', 0.)
-        self.ratio_conditioning = config.get('ratio_conditioning', False)
-        self.mu_warmup = config.get('mu_warmup', True)
-        self.mu_warmup_steps = config.get('mu_warmup_steps', 100)
-        self.skip_conj_prefix_loss = config.get('skip_conj_prefix_loss', False)
+        self.threshold = config.threshold
+        self.margin = config.margin
+        self.mu = config.mu
+        self.ratio_conditioning = config.ratio_conditioning
+        self.mu_warmup = config.mu_warmup
+        self.mu_warmup_steps = config.mu_warmup_steps
+        self.skip_conj_prefix_loss = config.skip_conj_prefix_loss
         self.total_iterations = config.total_iterations
         self._mu_warmup_step = 0
 
@@ -47,9 +47,9 @@ class TransformerLMPolicy(nn.Module):
         if torch.cuda.is_available():
             cfg = transformers.GPT2Config(
                 vocab_size=128,
-                n_layer=config.get('n_layer', 8),
-                n_head=config.get('n_head', 8),
-                n_embd=config.get('n_embd', 512),
+                n_layer=config.n_layer,
+                n_head=config.n_head,
+                n_embd=config.n_embd,
                 bos_token_id=BOS,
                 eos_token_id=EOS,
                 pad_token_id=PAD,
@@ -58,10 +58,10 @@ class TransformerLMPolicy(nn.Module):
         else:
             raise RuntimeError("CUDA is not available. Please use a GPU.")
 
-        self._batch_size = config.get('batch_size', 1000)
-        self._train_batches = config.get('train_iterations', 1000)
+        self._batch_size = config.batch_size
+        self._train_batches = config.train_iterations
         self._lm = transformers.GPT2LMHeadModel(cfg).to(device)
-        self._optimizer = torch.optim.AdamW(self._lm.parameters(), lr=config.get('lr', 1e-4))
+        self._optimizer = torch.optim.AdamW(self._lm.parameters(), lr=config.lr)
 
     def get_loss(self, strs):
         _, input_ids = self._strs_to_token_ids(strs, True)

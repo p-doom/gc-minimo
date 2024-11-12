@@ -974,14 +974,14 @@ class ProofSearchAgent:
     def __init__(self, config: DictConfig, mle_log: MLELogger):
         agent_config = config.agent
         self.config = config
-        self._max_mcts_nodes = agent_config.get('max_mcts_nodes', 1000)
-        self._max_searches = agent_config.get('max_searches', 1)
-        self._max_examples = agent_config.get('max_examples', 10**8)
-        self._checkpoint_every = agent_config.get('checkpoint_every', 1000)
+        self._max_mcts_nodes = agent_config.max_mcts_nodes
+        self._max_searches = agent_config.max_searches
+        self._max_examples = agent_config.max_examples
+        self._checkpoint_every = agent_config.checkpoint_every
         self._policy = make_policy(agent_config.policy, mle_log)
         self._node_type = ({'vanilla': LeftmostFirstSearchNode,
-                            'holophrasm': HolophrasmNode})[agent_config.get('node_type', 'holophrasm')]
-        self._checkpoint_dir = agent_config.get('checkpoint_dir', 'checkpoints')
+                            'holophrasm': HolophrasmNode})[agent_config.node_type]
+        self._checkpoint_dir = agent_config.checkpoint_dir
         self._training_its = 0
         self._checkpoints = 0
         self._examples = []
@@ -1306,8 +1306,8 @@ def test_proof_search(problemset='lean-library-logic',
 
 def make_agent(config, mle_log: MLELogger):
     if config.get('agent_path'):
-        agent = torch.load(config['agent_path'])
-    elif config.agent.get('type') == 'curiosity':
+        agent = torch.load(config.agent_path)
+    elif config.agent.type == 'curiosity':
         import pretraining
         agent = pretraining.CuriosityGuidedProofSearchAgent(config.agent)
     else:

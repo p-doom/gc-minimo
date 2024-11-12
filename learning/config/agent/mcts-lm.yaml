@@ -4,12 +4,21 @@ type: mcts
 
 node_type: holophrasm
 max_mcts_nodes: 1000
+# FIXME(f.srambical): never used
 expansions: 1000
 max_searches: 1
 max_examples: 1000
 
+checkpoint_every: 1000
+checkpoint_dir: checkpoints
+
 policy:
     type: LM
+
+    n_layer: 8
+    n_head: 8
+    n_embd: 512
+
     lr: 1e-4
     mu: 0.0
     ratio_conditioning: False
