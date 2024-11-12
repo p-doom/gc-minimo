@@ -1124,7 +1124,7 @@ def visualize_search_tree(root, path, min_visits=0):
 
 
 def run_proof_search_agent(config, mle_log: MLELogger):
-    if config.agent_path:
+    if config.get('agent_path'):
         log.info(f'Loading from checkpoint {config.agent_path}')
         agent = torch.load(config.agent_path)
         begin = config.skip
@@ -1163,7 +1163,7 @@ def run_proof_search_agent(config, mle_log: MLELogger):
 
 def test_agent(config: DictConfig):
     dot_path = config.get('dot_path', 'searchtree.dot')
-    agent_path = config.agent_path
+    agent_path = config.get('agent_path')
     problemset = problems.load_problemset(config.problemset)
     problem = problemset.initialize_problem(config.problem)
 
@@ -1305,7 +1305,7 @@ def test_proof_search(problemset='lean-library-logic',
 
 
 def make_agent(config, mle_log: MLELogger):
-    if config.agent_path:
+    if config.get('agent_path'):
         agent = torch.load(config.agent_path)
     elif config.agent.type == 'curiosity':
         import pretraining
