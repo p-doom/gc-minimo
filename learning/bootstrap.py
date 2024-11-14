@@ -35,11 +35,11 @@ FAIL = "fail"
 DISTRIBUTED = os.environ.get('DISTRIBUTED', False)
 
 
-def submit_task(agent_dump: bytes, theory: worker.BackgroundTheory, statement: str):
+def submit_task(agent_dump: bytes, theory: worker.BackgroundTheory, statement: str, search_budget=None):
     if DISTRIBUTED:
-        return worker.try_prove.apply_async((agent_dump, theory, statement))
+        return worker.try_prove.apply_async((agent_dump, theory, statement, search_budget))
     else:
-        return worker.try_prove.run(agent_dump, theory, statement)
+        return worker.try_prove.run(agent_dump, theory, statement, search_budget)
 
 
 def get_task_result(task):
@@ -109,10 +109,27 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
 
             # terminate the learning loop if all final goals are proven
             if len(success_logprobs_final) == len(final_goals):
+                mean_success_logprobs_final = sum(success_logprobs_final)/len(success_logprobs_final)
                 log.info('All final goals proven - stopping learning loop...')
                 mle_log.update({'num_iterations': i},
+                            'mean_success_logprobs_final': mean_success_logprobs_final,
                            {'final_goals_proven': final_goals_proven})
                 break
+
+            # get logprobs of proving the final goals (with far more mcts steps) as a progress_metric for us
+            # TODO mihir implement
+            search_budget = min(cfg.agent.max_mcts_nodes*100, 10000)
+            while len(success_logprobs_final) == 0 and search_budget < 100000:
+                student_results_final = prove_conjectures(agent_dump, final_goals_formatted, theory, premises, search_budget)
+                success_logprobs_final = get_log_probs(student_results_final, i)
+                search_budget *= 2
+
+            if len(success_logprobs_final) > 0:
+                mean_success_logprobs_final = sum(success_logprobs_final)/len(success_logprobs_final)
+            else:
+                mean_success_logprobs_final = -100
+
+            log.info('Mean logprob of proving final goals: %f', mean_success_logprobs_final)
 
             # 1- Run conjecturing model to obtain N conjectures.
             log.info('Iteration #%d: making conjectures...', i)
@@ -217,6 +234,7 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
                 mle_log.update({'num_iterations': i},
                            {'val_loss': val_loss,
                             'final_goals_proven': final_goals_proven,
+                            'mean_success_logprobs_final': mean_success_logprobs_final,
                             'ratio_proven': ratio_proven,
                             'mean_hard_sol_log_probs': mean_hard_sol_log_prob},
                             extra_obj={'conjectured_final_goals': conjectured_final_goals})
@@ -230,14 +248,15 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
                 yaml.dump(model_info, f)
 
 
-def prove_conjectures(agent_dump, conjectures, theory, premises):
+def prove_conjectures(agent_dump, conjectures, theory, premises, search_budget=None):
     tasks = []
     log.info('Submitting tasks...')
     for conjecture in tqdm(conjectures, miniters=1):
         tasks.append(submit_task(
             agent_dump,
             worker.BackgroundTheory(theory, premises),
-            conjecture))
+            conjecture, 
+            search_budget))
 
     student_results = []
 

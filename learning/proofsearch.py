@@ -986,7 +986,7 @@ class ProofSearchAgent:
         self._checkpoints = 0
         self._examples = []
 
-    def proof_search(self, problem, state):
+    def proof_search(self, problem, state, search_budget=None):
         root = TreeSearchNode(self._node_type([state]))
 
         node = root
@@ -996,7 +996,8 @@ class ProofSearchAgent:
         while not (node.is_terminal() or node.is_dead()):
             log.debug(f'State: {node.state_node}')
 
-            mcts = MonteCarloTreeSearch(self._policy, self._max_mcts_nodes, use_policy=True)
+            max_mcts_nodes = search_budget if search_budget else self._max_mcts_nodes
+            mcts = MonteCarloTreeSearch(self._policy, max_mcts_nodes, use_policy=True)
             solved, pi, _, it = mcts.evaluate(node)
 
             if solved:

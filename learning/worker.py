@@ -46,7 +46,7 @@ app.conf.accept_content = ['application/json', 'application/x-python-serialize']
 
 
 @app.task
-def try_prove(agent_dump: bytes, theory: BackgroundTheory, statement: str) -> StudentResult:
+def try_prove(agent_dump: bytes, theory: BackgroundTheory, statement: str, search_budget: int = None) -> StudentResult:
     try:
         with io.BytesIO(agent_dump) as f:
             agent = torch.load(f)
@@ -57,7 +57,7 @@ def try_prove(agent_dump: bytes, theory: BackgroundTheory, statement: str) -> St
                                 theory.premises,
                                 statement)
 
-        agent_result = agent.proof_search(statement, state)
+        agent_result = agent.proof_search(statement, state, search_budget)
         log.debug('Proof search for %s completed.', statement)
 
         if agent_result.success:
