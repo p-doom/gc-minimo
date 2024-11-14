@@ -202,7 +202,7 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
                                            if h.logprob <= thresholds[i] or i + 1 == len(difficulty_buckets))
 
                             if not cfg.get('freeze_conjecturer', False):
-                                examples.append(f'Conj:({outcome}) ' + d.elaborate(student_result.problem))
+                                examples.append(f'Conj:({outcome}) ' + d.elaborate(h.goal))
                             examples.extend(h.examples)
                             seen_hindsight_goals.add(h.goal)
 
