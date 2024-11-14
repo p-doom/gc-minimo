@@ -100,6 +100,7 @@ def process_experiment(experiment_path, client, write_api, bucket, org, hash_cac
                     "num_iterations": time["num_iterations"][iteration_counter],
                     "val_loss": stats["val_loss"][iteration_counter],
                     "final_goals_proven": stats["final_goals_proven"][iteration_counter],
+                    "mean_success_log_probs_final": stats["mean_success_log_probs_final"][iteration_counter],
                     "ratio_proven": stats["ratio_proven"][iteration_counter],
                     "mean_hard_sol_log_probs": stats["mean_hard_sol_log_probs"][iteration_counter]
                 }
