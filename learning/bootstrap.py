@@ -73,6 +73,7 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
     proven_conjectures = []
     seen_hindsight_goals = set()
     proofs = []
+    student_results_final = []
     model_info = dict()
 
     continue_dir = cfg.get('continue')
@@ -101,34 +102,6 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
             torch.save(agent, buff)
             agent_dump = buff.getvalue()
 
-            # Check if and how many conjectures out of the final goal set could be proven by current policy
-            student_results_final = prove_conjectures(agent_dump, final_goals_formatted, theory, premises)
-            success_logprobs_final = get_log_probs(student_results_final, i)
-            log.info('Final goals proven: %d out of %d', len(success_logprobs_final), len(final_goals))
-            final_goals_proven = len(success_logprobs_final)
-
-            # terminate the learning loop if all final goals are proven
-            if len(success_logprobs_final) == len(final_goals):
-                mean_success_logprobs_final = sum(success_logprobs_final)/len(success_logprobs_final)
-                log.info('All final goals proven - stopping learning loop...')
-                mle_log.update({'num_iterations': i},
-                            'mean_success_logprobs_final': mean_success_logprobs_final,
-                           {'final_goals_proven': final_goals_proven})
-                break
-
-            # get logprobs of proving the final goals (with far more mcts steps) as a progress_metric for us
-            search_budget = min(cfg.agent.max_mcts_nodes*100, 10000)
-            while len(success_logprobs_final) == 0 and search_budget < 100000:
-                student_results_final = prove_conjectures(agent_dump, final_goals_formatted, theory, premises, search_budget)
-                success_logprobs_final = get_log_probs(student_results_final, i)
-                search_budget *= 2
-
-            if len(success_logprobs_final) > 0:
-                mean_success_logprobs_final = sum(success_logprobs_final)/len(success_logprobs_final)
-            else:
-                mean_success_logprobs_final = -100
-
-            log.info('Mean logprob of proving final goals: %f', mean_success_logprobs_final)
 
             # 1- Run conjecturing model to obtain N conjectures.
             log.info('Iteration #%d: making conjectures...', i)
@@ -227,16 +200,24 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
             log_file.write('\n')
 
             # 3c- Train model on conjecturing and proof search examples.
-            if i + 1 < cfg.agent.policy.total_iterations:
-                print(len(examples), 'accumulated training examples.')
-                val_loss = agent.train(examples=examples, final_goals=final_goals, solutions=final_solutions, ratio_proven=ratio_proven, mle_log=mle_log)
-                mle_log.update({'num_iterations': i},
-                           {'val_loss': val_loss,
-                            'final_goals_proven': final_goals_proven,
-                            'mean_success_logprobs_final': mean_success_logprobs_final,
-                            'ratio_proven': ratio_proven,
-                            'mean_hard_sol_log_probs': mean_hard_sol_log_prob},
-                            extra_obj={'conjectured_final_goals': conjectured_final_goals})
+            print(len(examples), 'accumulated training examples.')
+            agent.train(examples=examples, final_goals=final_goals, ratio_proven=ratio_proven, mle_log=mle_log)
+            val_loss = get_val_loss(agent_dump, final_goals_formatted, theory, premises, i)
+            log.info('Validation loss: %f', val_loss)
+
+            # Check if and how many conjectures out of the final goal set could be proven by current policy
+            student_results_final = prove_conjectures(agent_dump, final_goals_formatted, theory, premises)
+            success_logprobs_final = get_log_probs(student_results_final, i)
+            log.info('Final goals proven: %d out of %d', len(success_logprobs_final), len(final_goals))
+            final_goals_proven = len(success_logprobs_final)
+
+            mle_log.update({'num_iterations': i},
+                        {'val_loss': val_loss,
+                        'final_goals_proven': final_goals_proven,
+                        'ratio_proven': ratio_proven,
+                        'mean_hard_sol_log_probs': mean_hard_sol_log_prob},
+                        extra_obj={'conjectured_final_goals': conjectured_final_goals})
+
 
             mle_log.save()
 
@@ -246,8 +227,26 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
             with open('model_info.yaml', 'w') as f:
                 yaml.dump(model_info, f)
 
+            # terminate the learning loop if all final goals are proven
+            if len(success_logprobs_final) == len(final_goals):
+                log.info('All final goals proven - stopping learning loop...')
+                break
 
-def prove_conjectures(agent_dump, conjectures, theory, premises, search_budget=None):
+def get_val_loss(agent_dump, final_goals_formatted, theory, premises, i):
+    # get logprobs of proving the final goals (with far more mcts steps) as a progress_metric for us
+    student_results_final = prove_conjectures(agent_dump, final_goals_formatted, theory, premises, is_eval=True)
+    success_logprobs_final = get_log_probs(student_results_final, i)
+
+    if len(success_logprobs_final) > 0:
+        mean_success_logprobs_final = sum(success_logprobs_final)/len(success_logprobs_final)
+    else:
+        mean_success_logprobs_final = -10
+
+    # flip signs so it is a loss
+    return -mean_success_logprobs_final
+
+
+def prove_conjectures(agent_dump, conjectures, theory, premises, is_eval=False):
     tasks = []
     log.info('Submitting tasks...')
     for conjecture in tqdm(conjectures, miniters=1):
@@ -255,7 +254,7 @@ def prove_conjectures(agent_dump, conjectures, theory, premises, search_budget=N
             agent_dump,
             worker.BackgroundTheory(theory, premises),
             conjecture, 
-            search_budget))
+            is_eval))
 
     student_results = []
 
