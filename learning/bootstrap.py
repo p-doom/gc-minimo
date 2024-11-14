@@ -109,6 +109,13 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
 
             # terminate the learning loop if all final goals are proven
             if len(success_logprobs_final) == len(final_goals):
+                final_results = []
+                for srf in student_results_final:
+                    lines = [l["str"] for l in srf.extracted_examples]
+                    final_results.append({"theorem": srf.problem, "proof": lines})
+                # write final goals and their proofs to a file
+                json.dump(final_results, open('final_goals_proofs.json', 'w'))
+                # end the training loop
                 log.info('All final goals proven - stopping learning loop...')
                 mle_log.update({'num_iterations': i},
                            {'final_goals_proven': final_goals_proven})
