@@ -62,7 +62,7 @@ class TransformerLMPolicy(nn.Module):
         self._lm = transformers.GPT2LMHeadModel(cfg).to(device)
         self._optimizer = torch.optim.AdamW(self._lm.parameters(), lr=config.get('lr', 1e-4))
 
-    def get_loss(self, strs):
+    def get_loss(self, strs, val_loss=False): 
         _, input_ids = self._strs_to_token_ids(strs, True)
         labels = input_ids.clone()
         labels[labels == PAD] = -100
@@ -76,13 +76,27 @@ class TransformerLMPolicy(nn.Module):
                         prefix_len = len(s[:prefix_end + 2]) + 1
                         # Set labels to -100 for all prefix tokens
                         labels[i, :prefix_len] = -100
+        if val_loss:
+            # mask out loss computation for everything but predicting the Y/N token
+            for i, s in enumerate(strs):
+                if '???' in s:
+                    prefix_end = s.find("???")
+                    if prefix_end != -1:
+                        # Convert prefix length to token length (add 1 for BOS token)
+                        prefix_len = len(s[:prefix_end + 3]) + 1
+                        # Set labels to -100 for all prefix tokens
+                        labels[i, :prefix_len] = -100
+                        labels[i, prefix_len+1:] = -100 # TODO mihir check if this raises index out of bounds
         attn_mask = input_ids != PAD
         return self._lm.forward(input_ids, attention_mask=attn_mask, labels=labels).loss
 
     def val_loss(self, val_set):
         self._lm.eval()
-        loss = self.get_loss(val_set).item()
-        return loss
+        val_set_flipped = [s.replace("???Y", "???N") if "???Y" in s else s.replace("???N", "???Y") for s in val_set]
+        loss = self.get_loss(val_set, True).item()
+        loss_flipped = self.get_loss(val_set_flipped, True).item()
+        val_loss = math.exp(loss) / (math.exp(loss) + math.exp(loss_flipped))
+        return val_loss
 
     def fit(self, examples, final_goals, iteration, ratio_proven, mle_log: MLELogger, verbose=False):
         self._lm.train()
@@ -159,6 +173,7 @@ class TransformerLMPolicy(nn.Module):
         all_queries = st_queries + sa_queries
         ans = self._estimate_query_values(all_queries)
         st_ans = ans[:len(st_queries)]
+        # TODO (mihir) investigate if this is a bug; shouldnt it be sa_queries
         sa_ans = ans[len(st_queries):]
         return st_ans, sa_ans
 

@@ -1026,7 +1026,7 @@ class ProofSearchAgent:
 
         return ProofSearchResult(problem, solved, root, examples, iterations)
 
-    def train(self, examples, final_goals, solutions, ratio_proven, mle_log: MLELogger): 
+    def train(self, examples, final_goals, val_set, ratio_proven, mle_log: MLELogger): 
         examples = examples or self._examples
 
         if self._training_its % self._checkpoint_every == 0:
@@ -1050,8 +1050,8 @@ class ProofSearchAgent:
 
             # calculate validation loss
             # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
-            solutions_flattened = [x for xs in solutions for x in xs]
-            val_loss = self._policy.val_loss(solutions_flattened)
+            val_set_flattened = [x for xs in val_set for x in xs]
+            val_loss = self._policy.val_loss(val_set_flattened)
         else:
             log.warning("No examples in this iteration.")
 
