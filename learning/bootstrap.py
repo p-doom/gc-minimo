@@ -117,7 +117,6 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
                 break
 
             # get logprobs of proving the final goals (with far more mcts steps) as a progress_metric for us
-            # TODO mihir implement
             search_budget = min(cfg.agent.max_mcts_nodes*100, 10000)
             while len(success_logprobs_final) == 0 and search_budget < 100000:
                 student_results_final = prove_conjectures(agent_dump, final_goals_formatted, theory, premises, search_budget)
