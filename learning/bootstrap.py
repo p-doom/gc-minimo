@@ -59,6 +59,27 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
     final_goals_formatted, final_solutions = load_final_goals(os.path.join(os.path.dirname(__file__), '../goals', cfg.goals + '.json'))
     final_goals = ["Conj:(hard) " + g for g in final_goals_formatted]
 
+    # load proper validation set 
+    val_goals_formatted, val_solutions = [], []
+    if cfg.get('val_goals'):
+        if os.path.isfile(os.path.join(os.path.dirname(__file__), '../goals', cfg.val_goals + ".json")):
+            val_goals_formatted, val_solutions = load_final_goals(os.path.join(os.path.dirname(__file__), '../goals', cfg.val_goals + ".json"))
+        else:
+            for f in os.listdir(os.path.join(os.path.dirname(__file__), '../goals')):
+                if f.startswith(cfg.val_goals) and f.endswith('.json'):
+                    val_goals_iter, val_solutions_iter = load_final_goals(os.path.join(os.path.dirname(__file__), '../goals', f))
+                    val_goals_formatted.extend(val_goals_iter)
+                    val_solutions.extend(val_solutions_iter)
+
+    # put add the final goals and solutions to the validation set
+    val_goals = [f"Conj:(hard) {g}" for g in val_goals_formatted]
+    val_goals.extend(final_goals)
+    val_solutions.extend(final_solutions)
+
+    # remove duplicates in case there are any
+    val_goals = list(set(val_goals))
+    val_solutions = list(set(val_solutions))
+
     with open(os.path.join(os.path.dirname(__file__), 'theories', cfg.theory.name + '.p')) as f:
         theory = f.read()
 
@@ -120,6 +141,21 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
                 mle_log.update({'num_iterations': i},
                            {'final_goals_proven': final_goals_proven})
                 break
+
+            # Check if and how many conjectures out of the val goal set could be proven by current policy
+            student_results_val = prove_conjectures(agent_dump, val_goals_formatted, theory, premises)
+            success_logprobs_val = get_log_probs(student_results_final, i)
+            log.info('Val goals proven: %d out of %d', len(success_logprobs_final), len(final_goals))
+            val_goals_proven = len(success_logprobs_final)
+
+            # terminate the learning loop if all final goals are proven
+            val_results = []
+            for srv in student_results_final:
+                lines = [l["str"] for l in srv.extracted_examples]
+                val_results.append({"theorem": srv.problem, "proof": lines})
+            # write final goals and their proofs to a file
+            json.dump(val_results, open('final_goals_proofs.json', 'w'))
+            # end the training loop
 
             # 1- Run conjecturing model to obtain N conjectures.
             log.info('Iteration #%d: making conjectures...', i)
@@ -220,7 +256,7 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
             # 3c- Train model on conjecturing and proof search examples.
             if i + 1 < cfg.agent.policy.total_iterations:
                 print(len(examples), 'accumulated training examples.')
-                val_loss = agent.train(examples=examples, final_goals=final_goals, solutions=final_solutions, ratio_proven=ratio_proven, mle_log=mle_log)
+                val_loss = agent.train(examples=examples, final_goals=final_goals, solutions=val_solutions, ratio_proven=ratio_proven, mle_log=mle_log)
                 mle_log.update({'num_iterations': i},
                            {'val_loss': val_loss,
                             'final_goals_proven': final_goals_proven,
