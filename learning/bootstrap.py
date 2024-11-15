@@ -206,7 +206,7 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
             val_loss, num_mcts_steps = get_val_loss(agent_dump, final_goals_formatted, theory, premises, i)
             log.info('Validation loss: %f', val_loss)
 
-            final_goals_proven = [s for s in student_results_final if s <= cfg.agent.max_mcts_nodes]
+            final_goals_proven = [s for s in num_mcts_steps if s <= cfg.agent.max_mcts_nodes]
             log.info('Final goals proven: %d out of %d', len(final_goals_proven), len(final_goals))
 
             mle_log.update({'num_iterations': i},
