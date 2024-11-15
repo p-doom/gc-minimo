@@ -52,19 +52,23 @@ def process_experiment(experiment_path, client, write_api, bucket, org, hash_cac
     config_yaml = os.path.join(working_dir, ".hydra/config.yaml")
 
     # Skip if required files don't exist
-    if not all(os.path.exists(f) for f in [log_file, hydra_yaml, config_yaml]):
+    if not all(os.path.exists(f) for f in [log_file, config_yaml]):
         logging.warning(f"Missing required files in {working_dir}")
         return
 
     # Calculate current file hash
     current_hash = calculate_file_hash(log_file)
-    
+
     with open(hydra_yaml, "r") as f:
         hydra_config = yaml.safe_load(f)
-        run_name = hydra_config["hydra"]["job"]["name"]
+
     with open(config_yaml, "r") as f:
         config = yaml.safe_load(f)
         num_train_iterations = config["agent"]["policy"]["train_iterations"]
+        run_name = config["job"]["name"]
+        # FIXME(f.srambical): hydra_config is only needed because legacy runs had a different logic for naming runs
+        if run_name == "default_run":
+            run_name = hydra_config["hydra"]["job"]["name"]
 
     # Check if hash has changed
     if run_name in hash_cache and hash_cache[run_name] == current_hash:
