@@ -202,14 +202,11 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
             # 3c- Train model on conjecturing and proof search examples.
             print(len(examples), 'accumulated training examples.')
             agent.train(examples=examples, final_goals=final_goals, ratio_proven=ratio_proven, mle_log=mle_log)
-            val_loss = get_val_loss(agent_dump, final_goals_formatted, theory, premises, i)
+            val_loss, num_mcts_steps = get_val_loss(agent_dump, final_goals_formatted, theory, premises, i)
             log.info('Validation loss: %f', val_loss)
 
-            # Check if and how many conjectures out of the final goal set could be proven by current policy
-            student_results_final = prove_conjectures(agent_dump, final_goals_formatted, theory, premises)
-            success_logprobs_final = get_log_probs(student_results_final, i)
-            log.info('Final goals proven: %d out of %d', len(success_logprobs_final), len(final_goals))
-            final_goals_proven = len(success_logprobs_final)
+            final_goals_proven = [s for s in student_results_final if s <= cfg.agent.max_mcts_nodes]
+            log.info('Final goals proven: %d out of %d', len(final_goals_proven), len(final_goals))
 
             mle_log.update({'num_iterations': i},
                         {'val_loss': val_loss,
@@ -233,7 +230,7 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
                 break
 
 def get_val_loss(agent_dump, final_goals_formatted, theory, premises, i):
-    # get logprobs of proving the final goals (with far more mcts steps) as a progress_metric for us
+    # get logprobs of proving the final goals (with far more mcts steps)
     student_results_final = prove_conjectures(agent_dump, final_goals_formatted, theory, premises, is_eval=True)
     success_logprobs_final = get_log_probs(student_results_final, i)
 
@@ -242,8 +239,9 @@ def get_val_loss(agent_dump, final_goals_formatted, theory, premises, i):
     else:
         mean_success_logprobs_final = -10
 
+    num_mcts_steps = [s.iterations for s in student_results_final]
     # flip signs so it is a loss
-    return -mean_success_logprobs_final
+    return -mean_success_logprobs_final, num_mcts_steps
 
 
 def prove_conjectures(agent_dump, conjectures, theory, premises, is_eval=False):

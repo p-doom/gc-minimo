@@ -1023,7 +1023,7 @@ class ProofSearchAgent:
         self._examples.extend(examples)
         self._examples = self._examples[-self._max_examples:]
 
-        return ProofSearchResult(problem, solved, root, examples, iterations)
+        return ProofSearchResult(problem, solved, root, examples, it)
 
     def train(self, examples, final_goals, ratio_proven, mle_log: MLELogger): 
         examples = examples or self._examples
