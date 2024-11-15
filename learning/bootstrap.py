@@ -211,7 +211,7 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
 
             mle_log.update({'num_iterations': i},
                         {'val_loss': val_loss,
-                        'final_goals_proven': final_goals_proven,
+                        'final_goals_proven': len(final_goals_proven),
                         'ratio_proven': ratio_proven,
                         'mean_hard_sol_log_probs': mean_hard_sol_log_prob},
                         extra_obj={'conjectured_final_goals': conjectured_final_goals})
@@ -226,7 +226,7 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
                 yaml.dump(model_info, f)
 
             # terminate the learning loop if all final goals are proven
-            if len(success_logprobs_final) == len(final_goals):
+            if len(final_goals_proven) == len(final_goals):
                 log.info('All final goals proven - stopping learning loop...')
                 break
 
