@@ -11,3 +11,4 @@ outputs/
 learning/easy-submit*
 plotting/grafana*
 plotting/influxdb*
+experiments/
