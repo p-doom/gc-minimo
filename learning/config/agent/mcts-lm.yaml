@@ -7,6 +7,7 @@ max_mcts_nodes: 1000
 expansions: 1000
 max_searches: 1
 max_examples: 1000
+val_search_budget: 10000
 
 policy:
     type: LM
