@@ -795,9 +795,6 @@ class LMPolicy(Policy):
 
         return examples
 
-    def val_loss(self, val_set):
-        return self._lm.val_loss(val_set)
-
     def train(self, examples, final_goals, iteration, ratio_proven, mle_log: MLELogger, verbose=True):
         self._lm.fit(examples, final_goals, iteration, ratio_proven, mle_log, verbose)
         self._lm.eval()
@@ -975,6 +972,7 @@ class ProofSearchAgent:
         agent_config = config.agent
         self.config = config
         self._max_mcts_nodes = agent_config.get('max_mcts_nodes', 1000)
+        self._val_search_budget = agent_config.get('val_search_budget', 10000)
         self._max_searches = agent_config.get('max_searches', 1)
         self._max_examples = agent_config.get('max_examples', 10**8)
         self._checkpoint_every = agent_config.get('checkpoint_every', 1000)
@@ -986,7 +984,7 @@ class ProofSearchAgent:
         self._checkpoints = 0
         self._examples = []
 
-    def proof_search(self, problem, state):
+    def proof_search(self, problem, state, is_eval=False):
         root = TreeSearchNode(self._node_type([state]))
 
         node = root
@@ -996,7 +994,8 @@ class ProofSearchAgent:
         while not (node.is_terminal() or node.is_dead()):
             log.debug(f'State: {node.state_node}')
 
-            mcts = MonteCarloTreeSearch(self._policy, self._max_mcts_nodes, use_policy=True)
+            max_mcts_nodes = self._val_search_budget if is_eval else self._max_mcts_nodes
+            mcts = MonteCarloTreeSearch(self._policy, max_mcts_nodes, use_policy=True)
             solved, pi, _, it = mcts.evaluate(node)
 
             if solved:
@@ -1024,9 +1023,9 @@ class ProofSearchAgent:
         self._examples.extend(examples)
         self._examples = self._examples[-self._max_examples:]
 
-        return ProofSearchResult(problem, solved, root, examples, iterations)
+        return ProofSearchResult(problem, solved, root, examples, it)
 
-    def train(self, examples, final_goals, solutions, ratio_proven, mle_log: MLELogger): 
+    def train(self, examples, final_goals, ratio_proven, mle_log: MLELogger): 
         examples = examples or self._examples
 
         if self._training_its % self._checkpoint_every == 0:
@@ -1048,15 +1047,10 @@ class ProofSearchAgent:
             # train policy
             self._policy.train(example_strs, final_goals, self._training_its, ratio_proven, mle_log)
 
-            # calculate validation loss
-            # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
-            solutions_flattened = [x for xs in solutions for x in xs]
-            val_loss = self._policy.val_loss(solutions_flattened)
         else:
             log.warning("No examples in this iteration.")
 
         self._training_its += 1
-        return val_loss
 
 def mcts_example(cfg, mle_log: MLELogger):
     problemset = problems.load_problemset('nng')
