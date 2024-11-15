@@ -240,7 +240,6 @@ def get_val_loss(agent_dump, final_goals_formatted, theory, premises, i):
         mean_success_logprobs_final = -10
 
     num_mcts_steps = [s.iterations for s in student_results_final]
-    # flip signs so it is a loss
     return -mean_success_logprobs_final, num_mcts_steps
 
 
