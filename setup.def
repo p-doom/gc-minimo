@@ -26,6 +26,7 @@ From: nvcr.io/nvidia/pytorch:24.01-py3
 
     # Install uv
     curl -LsSf https://astral.sh/uv/install.sh | sh
+    . $HOME/.local/bin/env
 
     # Set up Python virtual environment and dependencies
     cd /app
