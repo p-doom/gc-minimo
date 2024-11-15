@@ -201,7 +201,7 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
             log_file.write('\n')
 
             # 3c- Train model on conjecturing and proof search examples.
-            print(len(examples), 'accumulated training examples.')
+            log.info(f"{len(examples)} accumulated training examples.")
             agent.train(examples=examples, final_goals=final_goals, ratio_proven=ratio_proven, mle_log=mle_log)
             val_loss, num_mcts_steps = get_val_loss(agent_dump, final_goals_formatted, theory, premises, i)
             log.info('Validation loss: %f', val_loss)
