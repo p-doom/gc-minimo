@@ -32,13 +32,15 @@ class TransformerLMPolicy(nn.Module):
 
         self.config = config
         # FIXME(f.srambical): adjust these default values
-        self.threshold = config.get('threshold', 0.5)
-        self.mu = config.get('mu', 0.)
-        self.ratio_conditioning = config.get('ratio_conditioning', False)
-        self.mu_warmup = config.get('mu_warmup', True)
-        self.mu_warmup_steps = config.get('mu_warmup_steps', 100)
-        self.skip_conj_prefix_loss = config.get('skip_conj_prefix_loss', False)
-        self.total_iterations = config.total_iterations
+        self.threshold = config['threshold']
+        self.mu = config['mu']
+        self.ratio_conditioning = config['ratio_conditioning']
+        self.mu_warmup = config['mu_warmup']
+        self.mu_cooldown = config['mu_cooldown']
+        self.mu_cooldown_type = config['mu_cooldown_type']
+        self.mu_warmup_steps = config['mu_warmup_steps']
+        self.skip_conj_prefix_loss = config['skip_conj_prefix_loss']
+        self.total_iterations = config['total_iterations']
         self._mu_warmup_step = 0
 
         self._mle_log = mle_log
@@ -93,20 +95,21 @@ class TransformerLMPolicy(nn.Module):
                 continue
             self._optimizer.zero_grad()
             train_loss = self.get_loss(b) 
-            mu = self.get_mu(ratio_proven)
+            step = (iteration*self._train_batches)+i
+            mu = self.get_mu(ratio_proven, step)
             # if the ratio of proven conjectures is less than the threshold
             if ratio_proven < self.threshold:
                 progress_loss = 0
             else:
                 progress_loss = self.get_loss(final_goals) 
-                self._mu_warmup_step += 1
+                self._mu_warmup_step = self._mu_warmup_step + 1 if self._mu_warmup_step < self.mu_warmup_steps else self._mu_warmup_step
 
             # we need to multiply by len(batch | grep Conj:) because we want mu to be invariant to the number of difficulty--problem pairs in the batch
             #FIXME(f.srambical): check whether this is correct
             num_diff_problems_pairs = sum('Conj:' in s for s in b)
             ratio_diff_problem_pairs = num_diff_problems_pairs/self._batch_size
             loss = train_loss + mu * num_diff_problems_pairs * progress_loss 
-            mle_log.update({'num_steps': (iteration*self._train_batches)+i}, {'loss': loss, 'train_loss': train_loss, 'progress_loss': progress_loss, 'mu': mu, 'ratio_diff_problem_pairs': ratio_diff_problem_pairs})
+            mle_log.update({'num_steps': step}, {'loss': loss, 'train_loss': train_loss, 'progress_loss': progress_loss, 'mu': mu, 'ratio_diff_problem_pairs': ratio_diff_problem_pairs})
             loss.backward()
             self._optimizer.step()
 
@@ -133,14 +136,26 @@ class TransformerLMPolicy(nn.Module):
 
         return return_value
 
-    def get_mu(self, conjectures_proved_ratio):
+    def get_mu(self, conjectures_proved_ratio, step):
         if self.ratio_conditioning:
             raise NotImplementedError("Ratio-conditional mu not implemented")
         else:
             if self.mu_warmup and self._mu_warmup_step < self.mu_warmup_steps:
                 return self.mu * (self._mu_warmup_step/(self.mu_warmup_steps))
             else:
-                return self.mu
+                if self.mu_cooldown:
+                    # FIXME(f.srambical): 
+                    if self.mu_cooldown_type == 'linear':
+                        # Linear decay of mu from initial value to 0 over remaining steps
+                        remaining_steps = self.total_iterations*self._train_batches - step
+                        if remaining_steps <= 0:
+                            return 0
+                        return self.mu * (remaining_steps/(self.total_iterations*self._train_batches-self._mu_warmup_step))
+
+                    else:
+                        raise NotImplementedError(f"Unknown mu cooldown type {self.mu_cooldown_type}")
+                else:
+                    return self.mu
 
     def estimate_state_values(self, states: list[str]) -> np.array:
         return self._estimate_query_values([self.format_state_query(s) for s in states])
