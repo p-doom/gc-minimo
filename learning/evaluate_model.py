@@ -11,10 +11,11 @@ from tqdm import tqdm
 
 
 
-#######################################################################################################################################################################
-#               Script to evaluate the model on the final goals. Make sure it is in the learning/ folder                                                              #  
-#               Usage: python learning/evaluate_model.py --run_dir outputs/2024-11-12/23-22-47/ --final_goal_path "goals/nat-add-hard.json" --max_mcts_nodes=10000    # 
-#######################################################################################################################################################################
+#################################################################################################################################################################################
+#           Script to evaluate the model on the final goals. Make sure it is in the learning/ folder                                                                            #  
+#           Usage: python learning/evaluate_model.py --model_path outputs/2024-11-12/23-22-47/ --final_goal_path "goals/nat-add-hard.json" --max_mcts_nodes=10000               # 
+#           Alternative: python learning/evaluate_model.py --model_path outputs/2024-11-12/23-22-47/1.pt --final_goal_path "goals/nat-add-hard.json" --max_mcts_nodes=10000     # 
+#################################################################################################################################################################################
 
 def load_final_goals(path):
     goals_dict = json.load(open(path))
@@ -28,17 +29,12 @@ def load_final_goals(path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--run_dir", help="Path to the run directory")
+    parser.add_argument("--model_path", help="Path to the run directory or model.pt file")
     parser.add_argument("--final_goal_path", help="Path to the final goal file")
     parser.add_argument("--max_mcts_nodes", help="Search budget of MCTS", default=10000)
     args = parser.parse_args()
 
-    # Create a dictionary to store the parsed arguments
-    arguments = {
-        "run_dir": args.run_dir,
-        "final_goal_path": args.final_goal_path
-    }
-    print("evaluating model" , args.run_dir, "on", args.final_goal_path)
+    print("evaluating model" , args.model_path, "on", args.final_goal_path)
 
     theory_dict = {'name': 'nat-add', 'premises': ['eq_refl', 'eq_symm', 'rewrite', '+_z', '+_s', 'nat_ind']}
     with open(os.path.join(os.path.dirname(__file__), 'theories', theory_dict["name"] + '.p')) as f:
@@ -48,14 +44,17 @@ def main():
     d = peano.PyDerivation()
     d.incorporate(theory)
 
-    # Verify that the model.pt file exists in the run_dir
-    model_path = os.path.join(args.run_dir, "model.pt")
-    if os.path.exists(model_path):
+    # Verify that the model file exists
+    if os.path.exists(args.model_path):
         # Import the model
         # Load the model
-        model = torch.load(model_path)
+        model = torch.load(args.model_path)
+    elif os.path.exists(os.path.join(args.model_path, "model.pt")):
+        # Import the model
+        # Load the model
+        model = torch.load(os.path.join(args.model_path, "model.pt"))
     else:
-        assert False, f"model.pt file does not exist in the run_dir: {args.run_dir}"
+        assert False, f"model.pt file does not exist in the model_path: {args.model_path}"
     # load final_goal from final_goal_path 
     final_goal_path = args.final_goal_path
 
