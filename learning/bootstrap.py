@@ -83,7 +83,7 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
         log.info('Continuing run from %s', continue_dir)
         log.info('Starting from iteration %d', start_iteration)
         # Find largest iteration number such that i.pt exists.
-        if cfg.get('checkpoint_per_iteration', False):
+        if cfg.checkpoint_per_iteration:
             i = 0
             while os.path.exists(f'{i}.pt'):
                 i += 1
@@ -228,7 +228,7 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
             mle_log.save()
 
             save_json(examples, f'examples_{i}.json')
-            if cfg.get('checkpoint_per_iteration', False):
+            if cfg.checkpoint_per_iteration:
                 torch.save(agent, f"{i}.pt")
                 model_info['iteration'] = i
                 with open('model_info.yaml', 'w') as f:
