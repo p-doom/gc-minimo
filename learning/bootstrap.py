@@ -84,17 +84,17 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
         log.info('Starting from iteration %d', start_iteration)
         # Find largest iteration number such that i.pt exists.
         if cfg.get('checkpoint_per_iteration', False):
-            agent = torch.load(f'model.pt')
-            with open('model_info.yaml') as f:
-                model_info = yaml.safe_load(f)
-            start_iteration = model_info['iteration'] + 1
-        else:
             i = 0
             while os.path.exists(f'{i}.pt'):
                 i += 1
             start_iteration = i
             agent = torch.load(f'{i}.pt')
             print('Loaded agent from', f'{i}.pt')
+        else:
+            agent = torch.load(f'model.pt')
+            with open('model_info.yaml') as f:
+                model_info = yaml.safe_load(f)
+            start_iteration = model_info['iteration'] + 1
 
     if cfg.get('freeze_conjecturer', False):
         log.info('Ablation: Freezing conjecturer.')
@@ -229,12 +229,12 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
 
             save_json(examples, f'examples_{i}.json')
             if cfg.get('checkpoint_per_iteration', False):
-                torch.save(agent, f"model.pt")
-            else:
                 torch.save(agent, f"{i}.pt")
                 model_info['iteration'] = i
                 with open('model_info.yaml', 'w') as f:
                     yaml.dump(model_info, f)
+            else:
+                torch.save(agent, f"model.pt")
 
             # terminate the learning loop if all final goals are proven
             if len(final_goals_proven) == len(final_goals):
