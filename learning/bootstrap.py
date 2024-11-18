@@ -74,6 +74,7 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
     seen_hindsight_goals = set()
     proofs = []
     student_results_final = []
+    model_info = dict()
 
     continue_dir = cfg.get('continue')
     start_iteration = 0
