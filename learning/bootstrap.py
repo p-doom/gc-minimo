@@ -230,11 +230,11 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
             save_json(examples, f'examples_{i}.json')
             if cfg.checkpoint_per_iteration:
                 torch.save(agent, f"{i}.pt")
+            else:
+                torch.save(agent, f"model.pt")
                 model_info['iteration'] = i
                 with open('model_info.yaml', 'w') as f:
                     yaml.dump(model_info, f)
-            else:
-                torch.save(agent, f"model.pt")
 
             # terminate the learning loop if all final goals are proven
             if len(final_goals_proven) == len(final_goals):
