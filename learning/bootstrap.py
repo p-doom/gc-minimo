@@ -226,9 +226,10 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
                 yaml.dump(model_info, f)
 
             # terminate the learning loop if all final goals are proven
-            if cfg.early_exit and len(final_goals_proven) == len(final_goals):
-                log.info('All final goals proven - stopping learning loop...')
-                break
+            if len(final_goals_proven) == len(final_goals):
+                log.info('All final goals proven')
+                if cfg.early_exit:
+                    break
 
 def get_val_loss(agent_dump, final_goals_formatted, theory, premises, i):
     # get logprobs of proving the final goals (with far more mcts steps)
