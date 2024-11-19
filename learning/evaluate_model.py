@@ -50,7 +50,6 @@ def main():
         # Load the model
         model = torch.load(args.model_path)
     elif os.path.exists(os.path.join(args.model_path, "model.pt")):
-        # Import the model
         # Load the model
         model = torch.load(os.path.join(args.model_path, "model.pt"))
     else:
