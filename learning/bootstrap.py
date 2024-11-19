@@ -15,7 +15,6 @@ import logging
 from omegaconf import DictConfig, OmegaConf
 import torch
 import numpy as np
-from tqdm import tqdm
 
 import peano
 import worker
@@ -114,8 +113,6 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
             # 1- Run conjecturing model to obtain N conjectures.
             log.info('Iteration #%d: making conjectures...', i)
 
-            progress_bar = tqdm(total=cfg.n_conjectures)
-
             conjectures = []
 
             while len(conjectures) < cfg.n_conjectures:
@@ -125,9 +122,7 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
                     contracted_proposal = d.contract(proposal)
                     if contracted_proposal and contracted_proposal not in conjectures + proven_conjectures:
                         conjectures.append(contracted_proposal)
-                        progress_bar.update(1)
 
-            progress_bar.close()
 
             # Contract conjectures to make them Peano-parseable.
             conjectured_final_goals = set(conjectures) & set(final_goals_formatted)
@@ -260,7 +255,7 @@ def get_val_loss(agent_dump, final_goals_formatted, theory, premises, i):
 def prove_conjectures(agent_dump, conjectures, theory, premises, is_eval=False):
     tasks = []
     log.info('Submitting tasks...')
-    for conjecture in tqdm(conjectures, miniters=1):
+    for conjecture in conjectures:
         tasks.append(submit_task(
             agent_dump,
             worker.BackgroundTheory(theory, premises),
@@ -271,7 +266,7 @@ def prove_conjectures(agent_dump, conjectures, theory, premises, is_eval=False):
 
     log.info('Collecting %d results from workers.', len(tasks))
 
-    for task in tqdm(tasks, miniters=1):
+    for task in tasks:
         student_result = get_task_result(task)
 
         if student_result.error:
