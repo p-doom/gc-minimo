@@ -7,7 +7,6 @@ import policy
 import worker
 import peano
 import bootstrap
-from tqdm import tqdm
 
 
 

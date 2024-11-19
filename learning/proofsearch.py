@@ -795,7 +795,7 @@ class LMPolicy(Policy):
 
         return examples
 
-    def train(self, examples, final_goals, iteration, ratio_proven, mle_log: MLELogger, verbose=True):
+    def train(self, examples, final_goals, iteration, ratio_proven, mle_log: MLELogger, verbose=False):
         self._lm.fit(examples, final_goals, iteration, ratio_proven, mle_log, verbose)
         self._lm.eval()
 
@@ -815,11 +815,11 @@ class MonteCarloTreeSearch(Policy):
         self._use_default_policy = use_policy
         self._max_depth = 0
         
-    def expand(self, root: TreeSearchNode, on_expand=None, verbose=True):
+    def expand(self, root: TreeSearchNode, on_expand=None, verbose=False):
         return self.evaluate(root, on_expand=on_expand, verbose=verbose)
 
     def evaluate(self, root: TreeSearchNode, start_index=0,
-                 on_expand=None, verbose=True) -> np.array:
+                 on_expand=None, verbose=False) -> np.array:
         for i in tqdm_if(verbose)(range(self._budget)):
             if root.is_solved():
                 break
