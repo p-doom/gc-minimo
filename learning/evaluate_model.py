@@ -54,7 +54,7 @@ def main():
         # Load the model
         model = torch.load(os.path.join(args.model_path, "model.pt"))
     else:
-        assert False, f"model.pt file does not exist in the model_path: {args.model_path}"
+        raise FileNotFoundError(f"model_path is neither file nor directory: {args.model_path}")
     # load final_goal from final_goal_path 
     final_goal_path = args.final_goal_path
 
@@ -63,9 +63,9 @@ def main():
             with open(final_goal_path, 'r') as file:
                 final_goals_formatted, solutions = load_final_goals(final_goal_path)
         else:
-            assert False, f"final_goal_path is not a JSON file: {final_goal_path}"
+            raise ValueError(f"final_goal_path is not a JSON file: {final_goal_path}")
     else:
-        assert False, f"final_goal_path does not exist: {final_goal_path}"
+        raise FileNotFoundError(f"final_goal_path does not exist: {final_goal_path}")
 
     # Set the search budget
     model._val_search_budget = int(args.max_mcts_nodes)
