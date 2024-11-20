@@ -168,6 +168,7 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
             hard_sol_log_probs = [logprob for logprob in success_logprobs if logprob >= thresholds[0]]
             mean_hard_sol_log_prob = np.mean(hard_sol_log_probs) if hard_sol_log_probs else 0
             # 3b- Classify problems into easy/hard.
+            proven_conjectures_iteration = []
             for student_result in student_results:
                 # Outcome is the name of the first difficulty bucket that is larger than the logprob.
                 if student_result.success:
@@ -182,6 +183,7 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
                     examples.append(f'Conj:({outcome}) ' + d.elaborate(student_result.problem))
 
                 if student_result.success:
+                    proven_conjectures_iteration.append(student_result.problem)
                     proven_conjectures.append(student_result.problem)
                     proofs.append(student_result.proof)
 
@@ -224,6 +226,7 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
             mle_log.save()
 
             save_json(examples, f'examples_{i}.json')
+            save_json(proven_conjectures_iteration, f'proven_conj_{i}.json')
             if cfg.checkpoint_per_iteration:
                 torch.save(agent, f"{i}.pt")
             else:
