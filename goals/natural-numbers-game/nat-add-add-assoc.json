@@ -1,0 +1,11 @@
+{
+    "goals": [
+        {
+            "name": "a_add_assoc",
+            "theorem": "[('a0 : nat) -> ('a1 : nat) -> ('a2 : nat) -> (= (+ (+ 'a0 'a1) 'a2) (+ 'a0 (+ 'a1 'a2)))]",
+            "solution": [
+
+            ]
+        }
+    ]
+}

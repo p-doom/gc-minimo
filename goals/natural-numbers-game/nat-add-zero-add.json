@@ -1,0 +1,9 @@
+{
+    "goals": [
+        {
+            "name": "a_zero_add",
+            "theorem": "[('a0 : nat) -> (= (+ z 'a0) 'a0)]",
+            "solution": []
+        }
+    ]
+}

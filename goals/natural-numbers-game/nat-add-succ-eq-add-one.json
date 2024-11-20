@@ -1,0 +1,9 @@
+{
+    "goals": [
+        {
+            "name": "a_succ_eq_add_one",
+            "theorem": "[('a0 : nat) -> (= (s 'a0) (+ 'a0 (s z)))]",
+            "solution": []
+        }
+    ]
+}

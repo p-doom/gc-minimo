@@ -1,0 +1,42 @@
+===========================================================
+statement:
+(= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))
+examples:
+{'type': 'policy', 'str': 'S: G=1\nState: {  }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\n\nA: c eq_refl\n???Y'}
+{'type': 'policy', 'str': 'S: G=1\nState: {  }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\n\nA: c +_z\n???N'}
+{'type': 'policy', 'str': 'S: G=1\nState: {  }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\nA: => (= z z).\n???N'}
+{'type': 'policy', 'str': "S: G=1\nState: {  }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\nA: => (= [('n : nat) -> (= (+ 'n z) 'n)] [('n : nat) -> (= (+ 'n z) 'n)]).\n???N"}
+{'type': 'policy', 'str': "S: G=1\nState: {  }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\nA: => (= [('n : nat) -> ('m : nat) -> (= (+ 'n (s 'm)) (s (+ 'n 'm)))] [('n : nat) -> ('m : nat) -> (= (+ 'n (s 'm)) (s (+ 'n 'm)))]).\n???N"}
+{'type': 'policy', 'str': "S: G=1\nState: {  }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\nA: => (= [('p : [nat -> prop]) -> ('p z) -> [('n : nat) -> ('p 'n) -> ('p (s 'n))] -> [('n : nat) -> ('p 'n)]] [('p : [nat -> prop]) -> ('p z) -> [('n : nat) -> ('p 'n) -> ('p (s 'n))] -> [('n : nat) -> ('p 'n)]]).\n???N"}
+{'type': 'policy', 'str': 'S: G=1\nState: {  }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\nA: => (= (+ z z) (+ z z)).\n???N'}
+{'type': 'policy', 'str': 'S: G=1\nState: {  }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\nA: => (= (+ (+ z z) z) (+ (+ z z) z)).\n???N'}
+{'type': 'policy', 'str': 'S: G=1\nState: {  }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\nA: => (= (+ z (+ (+ z z) z)) (+ z (+ (+ z z) z))).\n???N'}
+{'type': 'policy', 'str': 'S: G=1\nState: {  }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\nA: => (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z)))).\n???Y'}
+{'type': 'value', 'str': 'S: <solved>\n???Y'}
+{'type': 'value', 'str': 'S: G=1\nState: {  }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\n???Y'}
+{'type': 'value', 'str': 'S: G=1\nState: {  }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\n\n???Y'}
+{'type': 'value', 'str': 'S: G=1\nState: { p : (= (+ (+ z z) z) (+ (+ z z) z)) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\n???N'}
+{'type': 'value', 'str': "S: G=1\nState: { p : (= [('p : [nat -> prop]) -> ('p z) -> [('n : nat) -> ('p 'n) -> ('p (s 'n))] -> [('n : nat) -> ('p 'n)]] [('p : [nat -> prop]) -> ('p z) -> [('n : nat) -> ('p 'n) -> ('p (s 'n))] -> [('n : nat) -> ('p 'n)]]) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct +_z\n???N"}
+{'type': 'value', 'str': 'S: G=1\nState: { p : (= (+ z z) (+ z z)) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct +_z\n???N'}
+{'type': 'value', 'str': 'S: G=1\nState: { p : (= z z) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\n\n???N'}
+{'type': 'value', 'str': 'S: G=1\nState: { p : (= (+ z (+ (+ z z) z)) (+ z (+ (+ z z) z))) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct +_z\n???N'}
+{'type': 'value', 'str': 'S: G=1\nState: { p : (= (+ z (+ (+ z z) z)) (+ z (+ (+ z z) z))) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\n???N'}
+{'type': 'value', 'str': "S: G=1\nState: { p : (= [('p : [nat -> prop]) -> ('p z) -> [('n : nat) -> ('p 'n) -> ('p (s 'n))] -> [('n : nat) -> ('p 'n)]] [('p : [nat -> prop]) -> ('p z) -> [('n : nat) -> ('p 'n) -> ('p (s 'n))] -> [('n : nat) -> ('p 'n)]]) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\n???N"}
+{'type': 'value', 'str': 'S: G=1\nState: { p : (= (+ (+ z z) z) (+ (+ z z) z)) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct +_z\n???N'}
+{'type': 'value', 'str': 'S: G=1\nState: { p : (= z z) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\n???N'}
+{'type': 'value', 'str': 'S: G=1\nState: { p : (= (+ z (+ (+ z z) z)) (+ z (+ (+ z z) z))) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\n\n???N'}
+{'type': 'value', 'str': "S: G=1\nState: { p : (= [('n : nat) -> (= (+ 'n z) 'n)] [('n : nat) -> (= (+ 'n z) 'n)]) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct +_z\n???N"}
+{'type': 'value', 'str': 'S: G=1\nState: { p : (= (+ z z) z) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\n\n???N'}
+{'type': 'value', 'str': 'S: G=1\nState: { p : (= (+ (+ z z) z) (+ (+ z z) z)) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\n\n???N'}
+{'type': 'value', 'str': "S: G=1\nState: { p : (= [('n : nat) -> ('m : nat) -> (= (+ 'n (s 'm)) (s (+ 'n 'm)))] [('n : nat) -> ('m : nat) -> (= (+ 'n (s 'm)) (s (+ 'n 'm)))]) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\n\n???N"}
+{'type': 'value', 'str': "S: G=1\nState: { p : (= [('n : nat) -> ('m : nat) -> (= (+ 'n (s 'm)) (s (+ 'n 'm)))] [('n : nat) -> ('m : nat) -> (= (+ 'n (s 'm)) (s (+ 'n 'm)))]) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct +_z\n???N"}
+{'type': 'value', 'str': "S: G=1\nState: { p : (= [('n : nat) -> (= (+ 'n z) 'n)] [('n : nat) -> (= (+ 'n z) 'n)]) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\n\n???N"}
+{'type': 'value', 'str': 'S: G=1\nState: { p : (= (+ z z) (+ z z)) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\n\n???N'}
+{'type': 'value', 'str': "S: G=1\nState: { p : (= [('n : nat) -> ('m : nat) -> (= (+ 'n (s 'm)) (s (+ 'n 'm)))] [('n : nat) -> ('m : nat) -> (= (+ 'n (s 'm)) (s (+ 'n 'm)))]) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\n???N"}
+{'type': 'value', 'str': 'S: G=1\nState: { p : (= (+ z z) (+ z z)) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\n???N'}
+{'type': 'value', 'str': "S: G=1\nState: { p : (= [('p : [nat -> prop]) -> ('p z) -> [('n : nat) -> ('p 'n) -> ('p (s 'n))] -> [('n : nat) -> ('p 'n)]] [('p : [nat -> prop]) -> ('p z) -> [('n : nat) -> ('p 'n) -> ('p (s 'n))] -> [('n : nat) -> ('p 'n)]]) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\n\n???N"}
+{'type': 'value', 'str': "S: G=1\nState: { p : (= [('n : nat) -> (= (+ 'n z) 'n)] [('n : nat) -> (= (+ 'n z) 'n)]) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct eq_refl\n???N"}
+{'type': 'value', 'str': 'S: G=1\nState: {  }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct +_z\n???N'}
+{'type': 'value', 'str': 'S: G=1\nState: { p : (= (+ (+ z z) z) (+ z z)) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\n\n???N'}
+{'type': 'value', 'str': 'S: G=1\nState: { p : (= z z) }\nGoal: (= (+ z (+ z (+ (+ z z) z))) (+ z (+ z (+ (+ z z) z))))\nconstruct +_z\n???N'}
+===========================================================
