@@ -1,0 +1,11 @@
+{
+    "goals": [
+        {
+            "name": "nat-mul-zero-mul",
+            "theorem": "[('a0 : nat) -> (= (* z 'a0) z)]",
+            "solution": [
+                "S: <solved>\n???Y"
+            ]
+        }
+    ]
+}
