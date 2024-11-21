@@ -3,8 +3,6 @@ import io
 import os
 import torch
 import json
-import policy
-import worker
 import peano
 import bootstrap
 
@@ -42,14 +40,19 @@ def main():
     premises = theory_dict["premises"]
     d = peano.PyDerivation()
     d.incorporate(theory)
-
+    
     # Verify that the model file exists
-    if os.path.exists(args.model_path):
-        # Load the model
-        model = torch.load(args.model_path)
+    if os.path.exists(args.model_path) and args.model_path.endswith(".pt"):
+        models = {f"checkpoint_{os.path.basename(args.model_path).split('.')[0]}": torch.load(args.model_path)}
     elif os.path.exists(os.path.join(args.model_path, "model.pt")):
-        # Load the model
-        model = torch.load(os.path.join(args.model_path, "model.pt"))
+        models = {f"checkpoint_{os.path.basename(args.model_path).split('.')[0]}": torch.load(os.path.join(args.model_path, "model.pt"))}
+    elif os.path.exists(os.path.join(args.model_path, "0.pt")):
+        models = {}
+        for i in range(15):
+            if os.path.exists(os.path.join(args.model_path, f"{i}.pt")):
+                models[f"checkpoint_{i}"] = torch.load(os.path.join(args.model_path, f"{i}.pt"))
+            else:
+                continue
     else:
         raise FileNotFoundError(f"model_path is neither file nor directory: {args.model_path}")
     # load final_goal from final_goal_path 
@@ -57,26 +60,36 @@ def main():
 
     if os.path.exists(final_goal_path):
         if final_goal_path.endswith('.json'):
-            with open(final_goal_path, 'r') as file:
-                final_goals_formatted, solutions = load_final_goals(final_goal_path)
+            final_goals_formatted, _ = load_final_goals(final_goal_path)
         else:
             raise ValueError(f"final_goal_path is not a JSON file: {final_goal_path}")
     else:
         raise FileNotFoundError(f"final_goal_path does not exist: {final_goal_path}")
 
-    # Set the search budget
-    model._val_search_budget = int(args.max_mcts_nodes)
 
-    # dump the model 
-    buff = io.BytesIO()
-    torch.save(model, buff)
-    agent_dump = buff.getvalue()
-    # Evaluate the model
-    final_goals = ["Conj:(hard) " + g for g in final_goals_formatted]
-    val_loss, num_mcts_steps = bootstrap.get_val_loss(agent_dump, final_goals_formatted, theory, premises, 0)
-    print(f"Validation loss: {val_loss}")
-    print(f"Number of MCTS steps: {sum(num_mcts_steps)/len(num_mcts_steps)}")
+    json_results = {}
+    final_goal_name = os.path.basename(final_goal_path).split(".")[0]
+    for i in models.keys():
+        # Set the search budget
+        models[i]._val_search_budget = int(args.max_mcts_nodes)
+        # dump the model 
+        buff = io.BytesIO()
+        torch.save(models[i], buff)
+        agent_dump = buff.getvalue()
+        # Evaluate the model
+        print(f"Goal: {final_goal_name} - Evaluating model {i}")
+        val_loss, num_mcts_steps = bootstrap.get_val_loss(agent_dump, final_goals_formatted, theory, premises, 0)
+        print(f"Validation loss: {val_loss},\t Number of MCTS steps: {sum(num_mcts_steps)/len(num_mcts_steps)}")
+        json_results[f"checkpoint_{i}"] = {"val_loss": val_loss, "num_mcts_steps": sum(num_mcts_steps)/len(num_mcts_steps)}
 
+    print(f"Saving results to {os.path.join(args.model_path, f'{final_goal_name}_per_checkpoint_val_loss.json')}")
+    print(json_results)
+    if args.model_path.endswith(".pt"):
+        with open(os.path.join(os.path.dirname(args.model_path), f"{final_goal_name}_per_checkpoint_val_loss.json"), "w") as f:
+            json.dump(json_results, f)
+    else: 
+        with open(os.path.join(args.model_path, f"{final_goal_name}_per_checkpoint_val_loss.json"), "w") as f:
+            json.dump(json_results, f)
 
 if __name__ == "__main__":
     main()
