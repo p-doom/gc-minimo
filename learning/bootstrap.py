@@ -110,26 +110,26 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
             agent_dump = buff.getvalue()
 
 
-            # 1- Run conjecturing model to obtain N conjectures.
-            log.info('Iteration #%d: making conjectures...', i)
+            # 1- Either use final goals or run conjecturing model
+            log.info('Iteration #%d: preparing goals...', i)
+            
+            if cfg.get('skip_conjecturing', False):
+                conjectures = final_goals_formatted
+                log.info('Skipping conjecture generation, using %d final goals', len(conjectures))
+                conjectured_final_goals = set(final_goals_formatted)
+            else:
+                conjectures = []
+                while len(conjectures) < cfg.n_conjectures:
+                    proposal = sample_conjecture(AgentLM(agent, 'Conj:(hard) '), context)
+                    if proposal and proposal not in conjectures + proven_conjectures:
+                        contracted_proposal = d.contract(proposal)
+                        if contracted_proposal and contracted_proposal not in conjectures + proven_conjectures:
+                            conjectures.append(contracted_proposal)
 
-            conjectures = []
-
-            while len(conjectures) < cfg.n_conjectures:
-                proposal = sample_conjecture(AgentLM(agent, 'Conj:(hard) '), context)
-
-                if proposal and proposal not in conjectures + proven_conjectures:
-                    contracted_proposal = d.contract(proposal)
-                    if contracted_proposal and contracted_proposal not in conjectures + proven_conjectures:
-                        conjectures.append(contracted_proposal)
-
-
-            # Contract conjectures to make them Peano-parseable.
-            conjectured_final_goals = set(conjectures) & set(final_goals_formatted)
-
-            log.info('Done making %d conjectures', len(conjectures))
-            log.info('Conjectures: %s', conjectures)
-            log.info('Conjectured %d final goals', len(conjectured_final_goals))
+                conjectured_final_goals = set(conjectures) & set(final_goals_formatted)
+                log.info('Done making %d conjectures', len(conjectures))
+                log.info('Conjectures: %s', conjectures)
+                log.info('Conjectured %d final goals', len(conjectured_final_goals))
 
             log_file.write(json.dumps({'iteration': i,
                                   'msg': f'It #{i}: posing {len(conjectures)} conjectures.',
@@ -144,29 +144,31 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
             # 3- Train model on proofs and outcome of conjectures (easy, hard, timeout)
             # 3a- Look at all the success logprobs and compute the easy/hard threhsold.
             success_logprobs = get_log_probs(student_results, i)
-            
             ratio_proven = len(success_logprobs)/len(conjectures)
             log.info('%d out of %d conjectures proven. ratio = %f', 
                         len(success_logprobs), len(conjectures), ratio_proven)
 
-            if not success_logprobs:
+            if not success_logprobs and not cfg.skip_conjecturing:
                 log.warning('No solutions found in iteration %d - continuing to next iteration...', i)
                 continue
 
             # Add output of proving final goals to the list of proven conjectures
             student_results.extend(student_results_final)
 
-            thresholds = [np.percentile(success_logprobs, p)
-                          for _, p in difficulty_buckets]
+            if not cfg.skip_conjecturing:
+                thresholds = [np.percentile(success_logprobs, p)
+                              for _, p in difficulty_buckets]
 
 
-            log.debug('Thresholds: %s, min = %f, max = %f',
-                        list(zip([k for k, _ in difficulty_buckets], thresholds)),
-                        np.min(success_logprobs),
-                        np.max(success_logprobs))
+                log.debug('Thresholds: %s, min = %f, max = %f',
+                            list(zip([k for k, _ in difficulty_buckets], thresholds)),
+                            np.min(success_logprobs),
+                            np.max(success_logprobs))
 
-            hard_sol_log_probs = [logprob for logprob in success_logprobs if logprob >= thresholds[0]]
-            mean_hard_sol_log_prob = np.mean(hard_sol_log_probs) if hard_sol_log_probs else 0
+                hard_sol_log_probs = [logprob for logprob in success_logprobs if logprob >= thresholds[0]]
+                mean_hard_sol_log_prob = np.mean(hard_sol_log_probs) if hard_sol_log_probs else 0
+            else:
+                mean_hard_sol_log_prob = 0
             # 3b- Classify problems into easy/hard.
             proven_conjectures_iteration = []
             for student_result in student_results:
@@ -192,9 +194,11 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
                 if cfg.train_policy_on_hindsight_examples:
                     for h in student_result.hindsight_examples:
                         if h.goal not in seen_hindsight_goals:
-                            outcome = next(k
-                                           for i, (k, _) in enumerate(difficulty_buckets)
-                                           if h.logprob <= thresholds[i] or i + 1 == len(difficulty_buckets))
+                            if cfg.skip_conjecturing:
+                                outcome = 'easy'
+                            else:
+                                outcome = next(k for i, (k, _) in enumerate(difficulty_buckets)
+                                               if h.logprob <= thresholds[i] or i + 1 == len(difficulty_buckets))
 
                             if not cfg.get('freeze_conjecturer', False):
                                 examples.append(f'Conj:({outcome}) ' + d.elaborate(student_result.problem))
