@@ -87,6 +87,7 @@ def process_experiment(experiment_path, conn, hash_cache, cache_file):
     with open(config_yaml, "r") as f:
         config = yaml.safe_load(f)
         num_train_iterations = config["agent"]["policy"]["train_iterations"]
+        num_total_iterations = config["agent"]["policy"]["total_iterations"]
         run_name = config["job"]["name"]
         if run_name == "default_run":
             run_name = hydra_config["hydra"]["job"]["name"]
@@ -108,7 +109,13 @@ def process_experiment(experiment_path, conn, hash_cache, cache_file):
             timestamps = [timestamp.decode("utf-8") for timestamp in timestamps]
             timestamp_indices = np.arange(len(timestamps))
             
-            iteration_mask = ((timestamp_indices-(num_train_iterations-1)) % num_train_iterations == 0)
+            iteration_mask = ((timestamp_indices-(num_train_iterations)) % (num_train_iterations + 1) == 0)
+            if run_name == "intermediate-checkpoints-nat-mul-one-vanilla-1":
+                breakpoint()
+            if not len(iteration_mask) == num_train_iterations * num_total_iterations + num_total_iterations:
+                raise ValueError(f"Iteration mask length mismatch for {run_name}. Expected {num_train_iterations * num_total_iterations + num_total_iterations}, got {len(iteration_mask)}")
+            if not iteration_mask[-1]:
+                raise ValueError(f"Iteration mask does not end with True for {run_name}. The last logging is an iteration logging.")
             
             iteration_counter = 0
             step_counter = 0
@@ -173,9 +180,9 @@ def process_experiment(experiment_path, conn, hash_cache, cache_file):
         save_hash_cache(cache_file, hash_cache)
         logging.info(f"Updated hash cache for {run_name}")
 
-    except Exception as e:
+    except Exception:
         conn.rollback()
-        logging.error(f"Error processing experiment {run_name}: {str(e)}")
+        logging.exception(f"Error processing experiment {run_name}")
         raise
 
 def main():
