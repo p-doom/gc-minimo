@@ -193,6 +193,10 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
 
                 if cfg.train_policy_on_hindsight_examples:
                     for h in student_result.hindsight_examples:
+                        # FIXME(f.srambical): this is why it data-starves.
+                        # I think we should probably change the proof search budget to be a function of the number of new hindsight examples found
+                        # i.e. do proof search until you have gathered x new hindsight examples
+                        # --> stabilises training dynamics as we would then have iteration-wise datasets of constant size
                         if h.goal not in seen_hindsight_goals:
                             if cfg.skip_conjecturing:
                                 outcome = 'easy'
