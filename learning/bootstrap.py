@@ -110,26 +110,30 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
             agent_dump = buff.getvalue()
 
 
-            # 1- Run conjecturing model to obtain N conjectures.
-            log.info('Iteration #%d: making conjectures...', i)
+            # 1- Either use final goals or run conjecturing model
+            log.info('Iteration #%d: preparing goals...', i)
+            
+            if cfg.get('skip_conjecturing', False):
+                conjectures = final_goals_formatted
+                log.info('Skipping conjecture generation, using %d final goals', len(conjectures))
+                conjectured_final_goals = set(final_goals_formatted)
+            else:
+                conjectures = []
+                while len(conjectures) < cfg.n_conjectures:
+                    proposal = sample_conjecture(AgentLM(agent, 'Conj:(hard) '), context)
+                    if cfg.allow_conjecture_repeats:
+                        if proposal not in conjectures:
+                            conjectures.append(proposal)
+                    else:
+                        if proposal and proposal not in conjectures + proven_conjectures:
+                            contracted_proposal = d.contract(proposal)
+                            if contracted_proposal and contracted_proposal not in conjectures + proven_conjectures:
+                                conjectures.append(contracted_proposal)
 
-            conjectures = []
-
-            while len(conjectures) < cfg.n_conjectures:
-                proposal = sample_conjecture(AgentLM(agent, 'Conj:(hard) '), context)
-
-                if proposal and proposal not in conjectures + proven_conjectures:
-                    contracted_proposal = d.contract(proposal)
-                    if contracted_proposal and contracted_proposal not in conjectures + proven_conjectures:
-                        conjectures.append(contracted_proposal)
-
-
-            # Contract conjectures to make them Peano-parseable.
-            conjectured_final_goals = set(conjectures) & set(final_goals_formatted)
-
-            log.info('Done making %d conjectures', len(conjectures))
-            log.info('Conjectures: %s', conjectures)
-            log.info('Conjectured %d final goals', len(conjectured_final_goals))
+                conjectured_final_goals = set(conjectures) & set(final_goals_formatted)
+                log.info('Done making %d conjectures', len(conjectures))
+                log.info('Conjectures: %s', conjectures)
+                log.info('Conjectured %d final goals', len(conjectured_final_goals))
 
             log_file.write(json.dumps({'iteration': i,
                                   'msg': f'It #{i}: posing {len(conjectures)} conjectures.',
