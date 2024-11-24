@@ -174,8 +174,11 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
             for student_result in student_results:
                 # Outcome is the name of the first difficulty bucket that is larger than the logprob.
                 if student_result.success:
-                    outcome = next(k
-                                   for i, (k, _) in enumerate(difficulty_buckets)
+                    if cfg.skip_conjecturing:
+                        outcome = 'hard'
+                    else:
+                        outcome = next(k
+                                       for i, (k, _) in enumerate(difficulty_buckets)
                                    if (student_result.logprob <= thresholds[i] or
                                        i + 1 == len(difficulty_buckets)))
                 else:
@@ -191,11 +194,13 @@ async def teacher_loop(cfg: DictConfig, mle_log: MLELogger):
 
                 examples.extend(student_result.extracted_examples)
 
-                if cfg.train_policy_on_hindsight_examples:
-                    for h in student_result.hindsight_examples:
-                        if h.goal not in seen_hindsight_goals:
+            if cfg.train_policy_on_hindsight_examples:
+                if cfg.skip_conjecturing:
+                    seen_hindsight_goals = set()
+                for h in student_result.hindsight_examples:
+                    if h.goal not in seen_hindsight_goals:
                             if cfg.skip_conjecturing:
-                                outcome = 'easy'
+                                outcome = 'hard'
                             else:
                                 outcome = next(k for i, (k, _) in enumerate(difficulty_buckets)
                                                if h.logprob <= thresholds[i] or i + 1 == len(difficulty_buckets))

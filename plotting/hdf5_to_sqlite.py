@@ -108,7 +108,7 @@ def process_experiment(experiment_path, conn, hash_cache, cache_file):
             timestamps = [timestamp.decode("utf-8") for timestamp in timestamps]
             timestamp_indices = np.arange(len(timestamps))
             
-            iteration_mask = ((timestamp_indices-(num_train_iterations-1)) % num_train_iterations == 0)
+            iteration_mask = ((timestamp_indices-(num_train_iterations)) % (num_train_iterations + 1) == 0)
             
             iteration_counter = 0
             step_counter = 0
