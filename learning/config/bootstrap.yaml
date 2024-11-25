@@ -11,6 +11,7 @@ n_conjectures: 200
 goals: nat-add-synthetic
 continue: null
 early_exit: false
+allow_conjecture_repeats: false
 
 difficulty_buckets:
     - hard: 20
@@ -20,6 +21,7 @@ difficulty_buckets:
 train_policy_on_hindsight_examples: true
 freeze_conjecturer: false
 checkpoint_per_iteration: true
+skip_conjecturing: false
 
 job:
     name: default_run
