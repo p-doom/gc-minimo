@@ -43,6 +43,7 @@ def submit_task(agent_dump: bytes, theory: worker.BackgroundTheory, statement: s
 
 def get_task_result(task):
     if DISTRIBUTED:
+        # FIXME(f.srambical): This is a blocking call.
         return task.get()
     else:
         return task
