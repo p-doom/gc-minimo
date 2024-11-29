@@ -18,8 +18,8 @@ WORKDIR /app
 # Copy your project files
 COPY . .
 
-# Install uv
-RUN pip install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && . $HOME/.local/bin/env
 
 # Create and activate virtual environment, install dependencies
 RUN uv sync \
